@@ -37,7 +37,7 @@ class NotFoundError extends Error {
   }
 }
 
-xmodule.exports = {
+module.exports = {
   BadRequestError,
   UnauthenticatedError,
   ForbiddenError,

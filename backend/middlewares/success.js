@@ -4,13 +4,12 @@ const response = {
   message: "",
 };
 
-function userRegisteredResponse(res, data, type = "not registered") {
-  response.message = successMessages.USER_REGISTERED + " Kindly login.";
-  response.data = data;
-  
-  if ((type === "not registered")) {
+function userRegisteredResponse(res, data = {}, type = "not registered") {
+  response.message = successMessages.USER_REGISTERED;
+  if (type === "not registered") {
     verifyEmailResponse(res);
   }
+  response.data = data;
   res.status(201).json(response);
 }
 function userLoginResponse(res) {

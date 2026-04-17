@@ -1,4 +1,5 @@
 const dotenv = require("dotenv");
+const bodyParser = require("body-parser");
 
 // Configurations
 dotenv.config();
@@ -15,8 +16,11 @@ const appName = process.env.APP_NAME || "App";
 const apiPrefix = process.env.API_PREFIX;
 const server = app;
 
+// middlewares
+app.use(bodyParser.json()); // To parse every body request into json format
+
 // Api Routers
-app.use(`/${apiPrefix}/`, AuthRouter);
+server.use(`/${apiPrefix}/`, AuthRouter);
 
 
 // Error Handling
