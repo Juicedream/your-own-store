@@ -1,5 +1,6 @@
 const dotenv = require("dotenv");
 const bodyParser = require("body-parser");
+const helmet = require('helmet');
 
 // Configurations
 dotenv.config();
@@ -17,7 +18,9 @@ const apiPrefix = process.env.API_PREFIX;
 const server = app;
 
 // middlewares
-app.use(bodyParser.json()); // To parse every body request into json format
+server.use(helmet);
+server.disable('x-powered-by')
+server.use(bodyParser.json()); // To parse every body request into json format
 
 // Api Routers
 server.use(`/${apiPrefix}/`, AuthRouter);
