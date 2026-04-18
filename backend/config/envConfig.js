@@ -9,6 +9,7 @@ const MONGO_URI = process.env.MONGO_URI;
 const SALT = Number(process.env.SALT);
 const MAIL_USERNAME = process.env.MAIL_USERNAME;
 const MAIL_PASSWORD = process.env.MAIL_PASSWORD;
+const JWT_SECRET = process.env.JWT_SECRET;
 
 module.exports = {
   PORT,
@@ -20,4 +21,5 @@ module.exports = {
   SALT,
   MAIL_USERNAME,
   MAIL_PASSWORD,
+  JWT_SECRET,
 };

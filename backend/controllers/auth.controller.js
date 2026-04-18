@@ -10,13 +10,13 @@ async function registerController(req, res) {
   userRegisteredResponse(res);
 }
 async function loginController(req, res) {
-  const user = await AuthService.login(req.body);
-  userLoginResponse(res, user);
+  const { user, token } = await AuthService.login(req.body);
+  userLoginResponse(res, user, token);
 }
 async function verifyEmailController(req, res) {
   const { vId } = req.params;
-  const user = await AuthService.verifyAccountWithVID(vId);
-  userRegisteredResponse(res, "registered", user);
+  const token = await AuthService.verifyAccountWithVID(vId);
+  userRegisteredResponse(res, "registered", token);
 }
 async function passwordlessLoginController(req, res) {
   await AuthService.passwordlessLogin(req.body);
@@ -25,8 +25,8 @@ async function passwordlessLoginController(req, res) {
 async function verifyOtpController(req, res) {
   const { otp, email } = req.body;
   const otpCode = String(otp);
-  const user = await AuthService.verifyOtpCode(otpCode, email);
-  userLoginResponse(res, user);
+  const {user, token} = await AuthService.verifyOtpCode(otpCode, email);
+  userLoginResponse(res, user, token);
 }
 
 module.exports = {

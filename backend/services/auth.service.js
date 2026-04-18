@@ -7,6 +7,7 @@ const { errorMessages, mailSubjects } = require("../utils/messages");
 const MailService = require("./mail.service");
 const PasswordEncryption = require("../config/encryptions/passwordEncryption");
 const { generateOtpCode } = require("../utils/verification");
+const JwtService = require("./jwt.service");
 
 class AuthService {
   // Register user
@@ -71,7 +72,12 @@ class AuthService {
       throw new BadRequestError(errorMessages.NOT_VERIFIED);
     }
     user.password = "\*****";
-    return user;
+    // generate jwt Token
+    const token = await JwtService.generateJwtToken({
+      id: user._id,
+      role: user.role,
+    });
+    return { user, token };
   }
 
   // Passwordless login
@@ -103,7 +109,12 @@ class AuthService {
     const updatedUser = await UserActionQuery.updateVerifyIDAndSaveToDB(
       user._id,
     );
-    return updatedUser;
+    // generate jwt Token
+    const token = await JwtService.generateJwtToken({
+      id: user._id,
+      role: user.role,
+    });
+    return token;
   }
 
   static async verifyOtpCode(otpCode, email) {
@@ -112,7 +123,12 @@ class AuthService {
       throw new BadRequestError(errorMessages.INVALID_OTP_CODE);
     }
     const savedUser = await UserActionQuery.saveOtpCodeAndSaveToDB(user._id); // turns otpCode to "" and saves in user Collection;
-    return savedUser;
+    // generate jwt Token
+    const token = await JwtService.generateJwtToken({
+      id: user._id,
+      role: user.role,
+    });
+    return { user: savedUser, token };
   }
 }
 

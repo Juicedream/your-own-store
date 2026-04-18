@@ -10,12 +10,13 @@ function userRegisteredResponse(res, type = "not registered", data = {}) {
     return;
   }
   response.message = successMessages.USER_REGISTERED;
-  response.data = {...data};
+  response.token = data;
   return res.status(201).json(response);
 }
-function userLoginResponse(res, user) {
+function userLoginResponse(res, user, token) {
   response.message = successMessages.LOGIN;
-  response.user = {...user}
+  // response.user = {...user}
+  response.token = token;
   return res.status(200).json(response);
 }
 
