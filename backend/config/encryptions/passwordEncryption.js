@@ -1,18 +1,19 @@
 const bcrypt = require("bcryptjs");
 const { SALT } = require("../envConfig");
 
-async function hashPassword(passwordToBeEncrypted) {
-  const hashPassword = await bcrypt.hash(passwordToBeEncrypted, SALT);
-  return hashPassword;
+class PasswordEncryption {
+  static async hashPassword(passwordToBeEncrypted) {
+    const hashPassword = await bcrypt.hash(passwordToBeEncrypted, SALT);
+    return hashPassword;
+  }
+
+  static async comparePasswords(passwordToBeDecrypted, hashedPassword) {
+    const isTheSamePassword = await bcrypt.compare(
+      passwordToBeDecrypted,
+      hashedPassword,
+    );
+    return isTheSamePassword;
+  }
 }
 
-async function comparePasswords(passwordToBeDecrypted, hashedPassword) {
-  const isTheSamePassword = await bcrypt.compare(passwordToBeDecrypted, hashedPassword);
-  return isTheSamePassword;
-}
-
-
-module.exports = {
-  hashPassword,
-  comparePasswords,
-}
+module.exports = PasswordEncryption;
