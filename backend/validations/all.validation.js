@@ -39,7 +39,8 @@ module.exports = {
     validate,
   ],
   otpCodeValidations: [
-    body("otpCode").isLength({ min: 6 }).withMessage("Otp code is invalid").isNumeric().withMessage("Provide a valid otp code"),
+    body("otp").isLength({ min: 6, max: 6 }).withMessage("Otp code is invalid").isNumeric().withMessage("Provide a valid otp code"),
+    body("email").isEmail().withMessage("Enter a valid email"),
     validate,
   ],
 

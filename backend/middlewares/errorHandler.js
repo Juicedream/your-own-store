@@ -1,3 +1,4 @@
+const { NODE_ENV } = require("../config/envConfig");
 const { errorMessages } = require("../utils/messages");
 
 const errorHandler = (err, _, res, next) => {
@@ -8,7 +9,7 @@ const errorHandler = (err, _, res, next) => {
     success: false,
     message,
     // Hide stack trace in production for security reasons
-    stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
+    stack: NODE_ENV === "development" ? err.stack : undefined,
   });
 };
 

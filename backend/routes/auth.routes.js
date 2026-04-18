@@ -16,7 +16,7 @@ const router = require("express").Router();
 router
   /**
    * @swagger
-   * /register:
+   * /auth/register:
    *   post:
    *     summary: Register a new user
    *     tags: [Auth]
@@ -29,10 +29,13 @@ router
    *              properties:
    *                name:
    *                  type: string
+   *                  example: James Allen
    *                email:
    *                  type: string
+   *                  example: james@example.com
    *                password:
    *                  type: string
+   *                  example: test1234
    *     responses:
    *       200:
    *         description: Check your email for verification.
@@ -47,7 +50,7 @@ router
 
   /**
    * @swagger
-   * /login:
+   * /auth/login:
    *   post:
    *     summary: Logins new user
    *     tags: [Auth]
@@ -60,8 +63,10 @@ router
    *              properties:
    *                email:
    *                  type: string
+   *                  example: james@example.com
    *                password:
    *                  type: string
+   *                  example: test1234
    *     responses:
    *       200:
    *         description: User Logged in successfully.
@@ -74,7 +79,7 @@ router
 
   /**
    * @swagger
-   * /passwordless-login:
+   * /auth/passwordless-login:
    *   post:
    *     summary: Logins a user with email
    *     tags: [Auth]
@@ -87,6 +92,7 @@ router
    *              properties:
    *                email:
    *                  type: string
+   *                  example: james@example.com
    *     responses:
    *       200:
    *         description: Check your email for otp code.
@@ -103,7 +109,7 @@ router
 
   /**
    * @swagger
-   * /verify-otp:
+   * /auth/verify-otp:
    *   post:
    *     summary: Verifies otp code
    *     tags: [Auth]
@@ -116,6 +122,10 @@ router
    *              properties:
    *                otp:
    *                  type: string
+   *                  example: 123456
+   *                email:
+   *                  type: string
+   *                  example: "james@example.com"
    *     responses:
    *       200:
    *         description: Otp verified successfully.
@@ -128,7 +138,7 @@ router
 
 /**
  * @swagger
- * /verify-email/:vId:
+ * /auth/verify-email/{vId}:
  *   get:
  *     summary: Verify new users email with a link
  *     tags: [Auth]
@@ -138,6 +148,7 @@ router
  *        required: true
  *        schema:
  *          type: string
+ *          example: 1111111888333aa
  *          description: Verfication ID
  *     responses:
  *       200:

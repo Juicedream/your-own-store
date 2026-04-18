@@ -36,10 +36,20 @@ class NotFoundError extends Error {
     Error.captureStackTrace(this, this.constructor);
   }
 }
+// when an item in the resource is not found
+class InternalServerError extends Error {
+  constructor(message) {
+    super(message);
+    this.statusCode = 500;
+    this.isOperational = true;
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
 
 module.exports = {
   BadRequestError,
   UnauthenticatedError,
   ForbiddenError,
   NotFoundError,
+  InternalServerError,
 };

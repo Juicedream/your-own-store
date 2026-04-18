@@ -10,11 +10,12 @@ function userRegisteredResponse(res, type = "not registered", data = {}) {
     return;
   }
   response.message = successMessages.USER_REGISTERED;
-  response.data = data;
+  response.data = {...data};
   return res.status(201).json(response);
 }
-function userLoginResponse(res) {
+function userLoginResponse(res, user) {
   response.message = successMessages.LOGIN;
+  response.user = {...user}
   return res.status(200).json(response);
 }
 
@@ -23,8 +24,16 @@ function verifyEmailResponse(res) {
   return res.status(200).json(response);
 }
 
+function passwordlessLoginResponse(res) {
+  response.message = successMessages.OTP_CODE_SENT;
+  return res.status(200).json(response);
+}
+
+
+
 module.exports = {
   userRegisteredResponse,
   userLoginResponse,
   verifyEmailResponse,
+  passwordlessLoginResponse,
 };

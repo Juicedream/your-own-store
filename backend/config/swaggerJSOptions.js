@@ -1,4 +1,4 @@
-const dotenv = require('dotenv').config();
+const { BACKEND_URL } = require("./envConfig");
 
 const options = {
   definition: {
@@ -32,7 +32,7 @@ const options = {
     ],
     servers: [
     {
-      url: process.env.BACKEND_URL,
+      url: BACKEND_URL,
       description: "Local server",
     },
   ],
