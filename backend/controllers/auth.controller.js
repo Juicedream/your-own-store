@@ -1,28 +1,32 @@
-const { UserActionQuery } = require("../db/dbQuery");
-const { userRegisteredResponse, userLoginResponse, passwordlessLoginResponse } = require("../middlewares/success");
+const {
+  userRegisteredResponse,
+  userLoginResponse,
+  passwordlessLoginResponse,
+} = require("../middlewares/success");
+const AuthService = require("../services/auth.service");
 
 async function registerController(req, res) {
-  await UserActionQuery.createUser(req.body);
+  await AuthService.register(req.body);
   userRegisteredResponse(res);
 }
 async function loginController(req, res) {
-  const user = await UserActionQuery.loginUser(req.body);
-  userLoginResponse(res, user);
+  const { user, token } = await AuthService.login(req.body);
+  userLoginResponse(res, user, token);
 }
 async function verifyEmailController(req, res) {
   const { vId } = req.params;
-  const user = await UserActionQuery.verifyAccountWithVID(vId);
-  userRegisteredResponse(res, "registered", user)
+  const token = await AuthService.verifyAccountWithVID(vId);
+  userRegisteredResponse(res, "registered", token);
 }
 async function passwordlessLoginController(req, res) {
-  await UserActionQuery.passwordlessLogin(req.body);
+  await AuthService.passwordlessLogin(req.body);
   passwordlessLoginResponse(res);
 }
 async function verifyOtpController(req, res) {
   const { otp, email } = req.body;
   const otpCode = String(otp);
-  const user = await UserActionQuery.verifyOtpCode(otpCode, email);
-  userLoginResponse(res, user);
+  const {user, token} = await AuthService.verifyOtpCode(otpCode, email);
+  userLoginResponse(res, user, token);
 }
 
 module.exports = {
