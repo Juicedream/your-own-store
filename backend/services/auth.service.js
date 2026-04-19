@@ -1,4 +1,8 @@
-const { BACKEND_URL } = require("../config/envConfig");
+const {
+  BACKEND_URL,
+  GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET,
+} = require("../config/envConfig");
 const sendMail = require("../config/mailConfig");
 const { UserActionQuery } = require("../db/dbQuery");
 const { BadRequestError, NotFoundError } = require("../middlewares/errors");
@@ -8,6 +12,8 @@ const MailService = require("./mail.service");
 const PasswordEncryption = require("../config/encryptions/passwordEncryption");
 const { generateOtpCode } = require("../utils/verification");
 const JwtService = require("./jwt.service");
+const { userLoginResponse } = require("../middlewares/success");
+
 
 class AuthService {
   // Register user
@@ -116,7 +122,7 @@ class AuthService {
     });
     return token;
   }
-
+  // Verify otp code
   static async verifyOtpCode(otpCode, email) {
     const user = await UserActionQuery.findUser(email, "email");
     if (!user || !user.otpCode || otpCode !== user.otpCode) {
@@ -130,6 +136,31 @@ class AuthService {
     });
     return { user: savedUser, token };
   }
+  static async signInWithGoogle(issuer, profile, cb) {
+    // Get user profile info
+    const email = profile.emails[0].value;
+    const name = profile.displayName;
+    
+    // create user in our database
+    const existingUser = await UserActionQuery.findUser(email, "email");
+    if (existingUser) {
+      const updatedUser = await UserActionQuery.updateUser(existingUser._id, "authType", "google");
+      profile.userId = existingUser._id;
+      return cb(null, profile)
+    }
+    const newUser = await UserActionQuery.createAndSaveUserToDB(name, null, email, "google");
+    profile.userId = newUser._id;
+    // End
+    return cb(null, profile);
+  }
+  static async googleSignIn(id){
+    const user = await UserActionQuery.findUser(id, "id");
+    if (!user || user.authType != "google") {
+      throw new BadRequestError("ID: " + id + " - " + errorMessages.USER_NOT_FOUND + " on google service");
+    }
+    const token = await JwtService.generateJwtToken({ id, role: user.role });
+    return { token, user };
+  }
 }
 
-module.exports = AuthService;
+module.exports = {AuthService};

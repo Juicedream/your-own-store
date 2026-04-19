@@ -10,6 +10,10 @@ const SALT = Number(process.env.SALT);
 const MAIL_USERNAME = process.env.MAIL_USERNAME;
 const MAIL_PASSWORD = process.env.MAIL_PASSWORD;
 const JWT_SECRET = process.env.JWT_SECRET;
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+const GOOGLE_CALLBACK_URL = process.env.GOOGLE_CALLBACK_URL;
+const GOOGLE_REDIRECT_URL = process.env.GOOGLE_REDIRECT_URL;
 
 module.exports = {
   PORT,
@@ -22,4 +26,8 @@ module.exports = {
   MAIL_USERNAME,
   MAIL_PASSWORD,
   JWT_SECRET,
+  GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET,
+  GOOGLE_CALLBACK_URL,
+  GOOGLE_REDIRECT_URL,
 };
