@@ -1,9 +1,11 @@
+const passport = require("passport");
 const {
   userRegisteredResponse,
   userLoginResponse,
   passwordlessLoginResponse,
 } = require("../middlewares/success");
-const AuthService = require("../services/auth.service");
+const {AuthService} = require("../services/auth.service");
+const { GOOGLE_REDIRECT_URL } = require("../config/envConfig");
 
 async function registerController(req, res) {
   await AuthService.register(req.body);
@@ -29,10 +31,33 @@ async function verifyOtpController(req, res) {
   userLoginResponse(res, user, token);
 }
 
+async function googleCallbackController(req, res) {
+   passport.authenticate("google", function (err, profile, info, status) {
+      if (err) {
+        console.log(err);
+        return res.send("An error occurred");
+      }
+      if (!profile) {
+        return res.send("No Profile found");
+      }
+      res.redirect(GOOGLE_REDIRECT_URL + profile.userId);
+    })(req, res);
+}
+
+async function successGoogleSignInController(req, res) {
+  const { id } = req.query;
+  const { user, token } = await AuthService.googleSignIn(id);
+  userLoginResponse(res, user, token);
+}
+
+
+
 module.exports = {
   registerController,
   loginController,
   verifyEmailController,
   passwordlessLoginController,
   verifyOtpController,
+  googleCallbackController,
+  successGoogleSignInController,
 };
