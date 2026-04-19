@@ -18,15 +18,9 @@ const UserSchema = new mongoose.Schema(
         ref: "Orders",
       },
     ],
-    otpCode: {
-      type: String,
-    },
     isVerified: {
       type: Boolean,
       default: false,
-    },
-    verificationID: {
-      type: String,
     },
     role: {
       type: String,
