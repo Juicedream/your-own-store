@@ -14,7 +14,6 @@ const { generateOtpCode } = require("../utils/verification");
 const JwtService = require("./jwt.service");
 const { userLoginResponse } = require("../middlewares/success");
 
-
 class AuthService {
   // Register user
   static async register(data) {
@@ -39,7 +38,7 @@ class AuthService {
       registeredUser.verificationID,
     );
 
-    return registeredUser;
+    return registeredUser.user;
     // done
   }
   // Login user
@@ -60,24 +59,28 @@ class AuthService {
     if (!isPasswordMatch) {
       throw new NotFoundError(`${errorMessages.INVALID_CREDENTIALS}`);
     }
+    const userVerificationID = await UserActionQuery.getVerificationIdForUser(
+      user._id,
+      "id",
+    );
     // if user is not verified and there is vID
-    if (!user.isVerified && !user.verificationID) {
+    if (!user.isVerified && !userVerificationID) {
       const authenticatedUser =
         await UserActionQuery.createVerificationIdAndSaveToDB(user);
       await MailService.sendVerificationLinkEmail(
-        authenticatedUser.email,
-        authenticatedUser.name,
-        authenticatedUser.verificationID,
+        user.email,
+        user.name,
+        authenticatedUser.vericationID,
       );
       throw new BadRequestError(errorMessages.NOT_VERIFIED_STILL);
     }
-    if (!user.isVerified && user.verificationID) {
+    if (!user.isVerified && userVerificationID) {
       throw new BadRequestError(errorMessages.NOT_VERIFIED);
     }
-    if (!user.isVerified || user.verificationID) {
+    if (!user.isVerified || userVerificationID) {
       throw new BadRequestError(errorMessages.NOT_VERIFIED);
     }
-    user.password = "\*****";
+    user.password = null;
     // generate jwt Token
     const token = await JwtService.generateJwtToken({
       id: user._id,
@@ -91,7 +94,8 @@ class AuthService {
     const { email } = data;
     const user = await UserActionQuery.findUser(email, "email");
     if (!user) return;
-    if (user.otpCode) {
+    const otpExist = await UserActionQuery.getOtpForUser(user._id);
+    if (otpExist) {
       throw new BadRequestError(errorMessages.OTP_EXIST);
     }
     // generate otp code
@@ -100,6 +104,9 @@ class AuthService {
       user._id,
       otpCode,
     );
+    if (!savedUser) {
+      throw new BadRequestError(errorMessages.OTP_EXIST);
+    }
     // send otp mail
     await MailService.sendOtpCodeEmail(email, otpCode);
     return;
@@ -108,59 +115,80 @@ class AuthService {
   // Verify email
   static async verifyAccountWithVID(verifyID) {
     // Get user with verifyID
-    const user = await UserActionQuery.findUser(verifyID, "verificationID");
-    if (!user || user.isVerified) {
+    const user = await UserActionQuery.getVerificationIdForUser(
+      verifyID,
+      "verificationID",
+    );
+    if (!user || !user.userId) {
       throw new BadRequestError(errorMessages.INVALID_VERIFY_LINK);
     }
     const updatedUser = await UserActionQuery.updateVerifyIDAndSaveToDB(
-      user._id,
+      user.userId,
     );
     // generate jwt Token
     const token = await JwtService.generateJwtToken({
-      id: user._id,
-      role: user.role,
+      id: updatedUser._id,
+      role: updatedUser.role,
     });
     return token;
   }
   // Verify otp code
   static async verifyOtpCode(otpCode, email) {
     const user = await UserActionQuery.findUser(email, "email");
-    if (!user || !user.otpCode || otpCode !== user.otpCode) {
+    const otpExist = await UserActionQuery.verifyAndUpdateOtpCode(
+      user._id,
+      otpCode,
+    );
+    if (!user || !otpExist) {
       throw new BadRequestError(errorMessages.INVALID_OTP_CODE);
     }
-    const savedUser = await UserActionQuery.saveOtpCodeAndSaveToDB(user._id); // turns otpCode to "" and saves in user Collection;
     // generate jwt Token
     const token = await JwtService.generateJwtToken({
       id: user._id,
       role: user.role,
     });
-    return { user: savedUser, token };
+    return { user, token };
   }
   static async signInWithGoogle(issuer, profile, cb) {
     // Get user profile info
     const email = profile.emails[0].value;
     const name = profile.displayName;
-    
+
     // create user in our database
     const existingUser = await UserActionQuery.findUser(email, "email");
     if (existingUser) {
-      const updatedUser = await UserActionQuery.updateUser(existingUser._id, "authType", "google");
+      const updatedUser = await UserActionQuery.updateUser(
+        existingUser._id,
+        "authType",
+        "google",
+      );
       profile.userId = existingUser._id;
-      return cb(null, profile)
+      return cb(null, profile);
     }
-    const newUser = await UserActionQuery.createAndSaveUserToDB(name, null, email, "google");
+    const newUser = await UserActionQuery.createAndSaveUserToDB(
+      name,
+      null,
+      email,
+      "google",
+    );
     profile.userId = newUser._id;
     // End
     return cb(null, profile);
   }
-  static async googleSignIn(id){
+  static async googleSignIn(id) {
     const user = await UserActionQuery.findUser(id, "id");
     if (!user || user.authType != "google") {
-      throw new BadRequestError("ID: " + id + " - " + errorMessages.USER_NOT_FOUND + " on google service");
+      throw new BadRequestError(
+        "ID: " +
+          id +
+          " - " +
+          errorMessages.USER_NOT_FOUND +
+          " on google service",
+      );
     }
     const token = await JwtService.generateJwtToken({ id, role: user.role });
     return { token, user };
   }
 }
 
-module.exports = {AuthService};
+module.exports = { AuthService };
