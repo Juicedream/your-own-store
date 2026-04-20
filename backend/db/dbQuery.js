@@ -1,6 +1,7 @@
 const OtpCodeModel = require("../schemas/otpCode.schema");
+const SessionsModel = require("../schemas/session.schema");
 const UserModel = require("../schemas/user.schema");
-const VerificationIdModel = require("../schemas/verifcationId.schema");
+const VerificationIdModel = require("../schemas/verificationId.schema");
 const { generateVerificationID } = require("../utils/verification");
 
 class UserActionQuery {
@@ -10,136 +11,220 @@ class UserActionQuery {
    * @param {string} by - The element you want to find user by e.g email, verficationID, id
    * @returns {object} {_id: "137dojd2", name: "Ade", ...}
    */
-  static async findUser(value, by = "email") {
+  static async findUser(value, by = "email", session = null) {
     // Ensure that value is exactly the property in the user model
     let user;
     if (by === "email") {
-      user = await UserModel.findOne({ email: value });
+      user = await UserModel.findOne({ email: value }).session(session);
     }
     if (by === "id") {
-      user = await UserModel.findById(value);
+      user = await UserModel.findById(value).session(session);
+    }
+    if (!user) {
+      return null;
     }
 
     return user ? user._doc : user;
   }
 
-  static async updateUser(id, properyToUpdate, newValue) {
-    const user = await UserModel.findById(id);
+  static async updateUser(id, fieldToUpdate, newValue, session = null) {
+    // const user = await UserModel.findById(id);
+    const allowedFields = [
+      "name",
+      "email",
+      "password",
+      "authType",
+      "otpCode",
+      "isVerified",
+      "role",
+    ];
+    if (!allowedFields.includes(fieldToUpdate)) {
+      return { error: "Invalid Field update attempt" };
+    }
     const updatedUser = await UserModel.findByIdAndUpdate(
       id,
-      {
-        name: properyToUpdate === "name" ? newValue : user.name,
-        email: properyToUpdate === "email" ? newValue : user.email,
-        password: properyToUpdate === "password" ? newValue : user.password,
-        authType: properyToUpdate === "authType" ? newValue : user.authType,
-        otpCode: properyToUpdate === "otpCode" ? newValue : user.otpCode,
-        isVerified:
-          properyToUpdate === "isVerified" ? newValue : user.isVerified,
-        verificationID:
-          properyToUpdate === "verificationID" ? newValue : user.verificationID,
-        role: properyToUpdate === "role" ? newValue : user.role,
-      },
+      { [fieldToUpdate]: newValue },
       { returnDocument: "after", runValidators: true },
+      { session },
     );
-    updatedUser.password = null;
 
-    return updatedUser._doc;
+    if (updatedUser) updatedUser.password = null;
+
+    return { user: updatedUser._doc };
   }
 
-  static async createAndSaveUserToDB(name, hashedPassword, email, authType) {
+  static async createAndSaveUserToDB(
+    name,
+    hashedPassword,
+    email,
+    authType,
+    session = null,
+  ) {
     // Create User
-    const newUser = new UserModel({
-      name,
-      email,
-      isVerified: authType === "google" ? true : false,
-      password: hashedPassword ? hashedPassword : null,
-      role: "user",
-      authType: authType ? authType : "manual",
-    });
+    const newUser = await UserModel.create(
+      [
+        {
+          name,
+          email,
+          isVerified: authType === "google" ? true : false,
+          password: hashedPassword ? hashedPassword : null,
+          role: "user",
+          authType: authType ? authType : "manual",
+        },
+      ],
+      { session },
+    );
     // generate the verfication ID
-    if (hashedPassword && newUser.authType === "manual") {
-      const vId = generateVerificationID(newUser._id);
-      const verificationID = new VerificationIdModel({
-        userId: newUser._id,
-        verificationID: vId,
-      });
-      await verificationID.save();
-      await newUser.save();
-      return { verificationID: vId, user: newUser._doc };
+    if (hashedPassword && newUser[0].authType === "manual") {
+      const vId = generateVerificationID(newUser[0]._id);
+      const verificationID = await VerificationIdModel.create(
+        [
+          {
+            userId: newUser[0]._id,
+            verificationID: vId,
+          },
+        ],
+        { session },
+      );
+      return { verificationID: vId, user: newUser[0] };
     }
-    await newUser.save();
-    return { user: newUser._doc };
+    // else return user
+    return { user: newUser[0] };
   }
 
-  static async getOtpForUser(id) {
-    const code = await OtpCodeModel.findOne({ userId: id });
+  static async getOtpForUser(id, session = null) {
+    const code = await OtpCodeModel.findOne({ userId: id }).session(session);
     if (!code || !code.otpCode) {
       return null;
     }
     return { otp: code.otpCode };
   }
-  static async verifyAndUpdateOtpCode(id, otpCode = "") {
-    const getOtpExist = await OtpCodeModel.findOne({ userId: id });
+  static async verifyAndUpdateOtpCode(id, otpCode = "", session = null) {
+    const getOtpExist = await OtpCodeModel.findOne({ userId: id }).session(
+      session,
+    );
     if (!getOtpExist || otpCode !== getOtpExist.otpCode) {
       return null;
     }
-    await OtpCodeModel.findByIdAndDelete(getOtpExist._id);
+    await OtpCodeModel.findByIdAndDelete(getOtpExist._id).session(session);
     return { message: "Otp deleted successfully" };
   }
 
-  static async saveOtpCodeAndSaveToDB(id, otpCode = "") {
-    const otpExist = await OtpCodeModel.findOne({ userId: id });
-    if (otpExist) {
-      return null;
-    }
-    const saveOtp = new OtpCodeModel({
-      userId: id,
-      otpCode,
-    });
+  static async saveOtpCodeAndSaveToDB(id, otpCode = "", session = null) {
+    // const otpExist = await OtpCodeModel.findOne({ userId: id });
+    // if (otpExist) {
+    //   return null;
+    // }
+    const saveOtp = await OtpCodeModel.create(
+      [
+        {
+          userId: id,
+          otpCode,
+        },
+      ],
+      { session },
+    );
 
-    await saveOtp.save();
-
-    return saveOtp._doc;
+    return saveOtp[0];
   }
 
-  static async getVerificationIdForUser(value, by = "id") {
+  static async getVerificationIdForUser(value, by = "id", session = null) {
     if (by === "id") {
-      const vId = await VerificationIdModel.findOne({ userId: value });
+      const vId = await VerificationIdModel.findOne({ userId: value }).session(
+        session,
+      );
       if (!vId || !vId.verificationID) return null;
       return { vid: vId.verificationID, _id: vId._id };
     }
     if (by === "verificationID") {
-      const vId = await VerificationIdModel.findOne({ verificationID: value });
+      const vId = await VerificationIdModel.findOne({
+        verificationID: value,
+      }).session(session);
       if (!vId || !vId.userId) return null;
       return { vid: vId.verificationID, userId: vId.userId, _id: vId._id };
     }
   }
 
-  static async updateVerifyIDAndSaveToDB(id, verificationID = "") {
+  static async updateVerifyIDAndSaveToDB(
+    id,
+    verificationID = "",
+    session = null,
+  ) {
     const updatedUser = await UserModel.findByIdAndUpdate(
       id,
       {
         isVerified: verificationID ? false : true,
       },
       { returnDocument: "after", runValidators: true },
+      { session },
     );
-    const vid = await this.getVerificationIdForUser(id, "id");
-    await VerificationIdModel.findByIdAndDelete(vid._id);
+    const vid = await this.getVerificationIdForUser(id, "id", session);
+    await VerificationIdModel.findByIdAndDelete(vid._id).session(session);
     updatedUser.password = null;
-    return updatedUser._doc;
+    return updatedUser;
   }
 
-  static async createVerificationIdAndSaveToDB(user) {
-    const vID = await VerificationIdModel.findOne({ userId: user._id });
+  static async createVerificationIdAndSaveToDB(user, session = null) {
+    const vID = await VerificationIdModel.findOne({ userId: user._id }).session(
+      session,
+    );
     if (!vID) {
-      const id = await VerificationIdModel.create({
-        userId: user._id,
-        verificationID: generateVerificationID(user._id), 
-      });
-      await id.save();
-      return { vericationID: id.verificationID };
+      const id = await VerificationIdModel.create(
+        [
+          {
+            userId: user._id,
+            verificationID: generateVerificationID(user._id),
+          },
+        ],
+        { session },
+      );
+
+      return { verificationID: id[0].verificationID };
     }
     return null;
+  }
+  static async createNewRefreshToken(
+    hashedRefreshToken,
+    userId,
+    session = null,
+  ) {
+    const existingRefreshToken = await SessionsModel.findOne({
+      userId,
+    }).session(session);
+    if (existingRefreshToken) {
+      await SessionsModel.findByIdAndDelete(existingRefreshToken._id).session(
+        session,
+      );
+    }
+    const newRefresh = await SessionsModel.create(
+      [{ userRefreshToken: hashedRefreshToken, userId }],
+      { session },
+    );
+    if (!newRefresh[0]) {
+      return { error: "Couldn't not create a new refresh token" };
+    }
+    return { refreshToken: newRefresh[0].userRefreshToken };
+  }
+  static async getUserRefreshToken(userId, session = null) {
+    const existingRefreshToken = await SessionsModel.findOne({
+      userId,
+    }).session(session);
+    if (!existingRefreshToken) {
+      return {
+        error:
+          "Error getting the refresh token for the user - No refresh token found ",
+      };
+    }
+    return { refreshToken: existingRefreshToken.userRefreshToken };
+  }
+  static async deleteUserRefreshTokenSession(userId, session = null) {
+    const data = await SessionsModel.findOne({ userId }).session(session);
+    if (!data) {
+      return { deleted: false }
+    }
+    // delete session
+    await SessionsModel.findByIdAndDelete(data._id).session(session);
+    return { deleted: true }
   }
 }
 

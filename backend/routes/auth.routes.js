@@ -6,12 +6,15 @@ const {
   verifyOtpController,
   successGoogleSignInController,
   googleCallbackController,
+  newAccessTokenWithValidRefreshTokenController,
+  logoutController,
 } = require("../controllers/auth.controller");
 const {
   userRegisterValidations,
   userLoginValidations,
   passwordlessValidations,
   otpCodeValidations,
+  refreshTokenValidations,
 } = require("../validations/all.validation");
 const router = require("express").Router();
 const GoogleStrategy = require("passport-google-oidc");
@@ -22,6 +25,10 @@ const {
   GOOGLE_CALLBACK_URL,
 } = require("../config/envConfig");
 const { AuthService } = require("../services/auth.service");
+const {
+  validateRefreshToken,
+  getUserMiddleware,
+} = require("../middlewares/auth.middleware");
 
 passport.use(
   new GoogleStrategy(
@@ -72,7 +79,7 @@ router
    *                  example: James Allen
    *                email:
    *                  type: string
-   *                  example: james@example.com
+   *                  example: james@gmail.com
    *                password:
    *                  type: string
    *                  example: test1234
@@ -103,7 +110,7 @@ router
    *              properties:
    *                email:
    *                  type: string
-   *                  example: james@example.com
+   *                  example: james@gmail.com
    *                password:
    *                  type: string
    *                  example: test1234
@@ -132,7 +139,7 @@ router
    *              properties:
    *                email:
    *                  type: string
-   *                  example: james@example.com
+   *                  example: james@gmail.com
    *     responses:
    *       200:
    *         description: Check your email for otp code.
@@ -165,7 +172,7 @@ router
    *                  example: 123456
    *                email:
    *                  type: string
-   *                  example: "james@example.com"
+   *                  example: "james@gmail.com"
    *     responses:
    *       200:
    *         description: Otp verified successfully.
@@ -174,7 +181,60 @@ router
    *       500:
    *         description: Internal Server Error.
    */
-  .post("/verify-otp", otpCodeValidations, verifyOtpController);
+  .post("/verify-otp", otpCodeValidations, verifyOtpController)
+
+  /**
+   * @swagger
+   * /auth/refresh:
+   *   post:
+   *     summary: Gets new access token
+   *     tags: [Auth]
+   *     requestBody:
+   *        required: true
+   *        content:
+   *          application/json:
+   *            schema:
+   *              type: object
+   *              properties:
+   *                refreshToken:
+   *                  type: string
+   *                  example: youthinkiwillreallyputithere?youjoke
+   *     responses:
+   *       200:
+   *         description: Access Token created.
+   *       400:
+   *         description: Bad Request.
+   *       500:
+   *         description: Internal Server Error.
+   */
+  .post(
+    "/refresh",
+    // refreshTokenValidations,
+    validateRefreshToken,
+    getUserMiddleware,
+    newAccessTokenWithValidRefreshTokenController,
+  )
+  /**
+   * @swagger
+   * /auth/logout:
+   *   post:
+   *     summary: Logout out from a current session
+   *     tags: [Auth]
+   *     responses:
+   *       204:
+   *         description: Logged out successfully.
+   *       400:
+   *         description: Bad Request.
+   *       500:
+   *         description: Internal Server Error.
+   */
+  .post(
+    "/logout",
+    validateRefreshToken,
+    logoutController,
+  );
+
+// GET REQUESTS
 
 router
   /**
@@ -200,10 +260,10 @@ router
    *         description: Internal Server Error.
    */
   .get("/verify-email/:vId", verifyEmailController)
-  
+
   /**
    * @swagger
-   * /auth/sign-in-google:
+   * /auth/sign-in-with-google:
    *   get:
    *     summary: Users can sign in with google
    *     tags: [Auth]
@@ -221,7 +281,7 @@ router
    * @swagger
    * /auth/google-success:
    *   get:
-   *     summary: Verify new users email with a link
+   *     summary: Verifies that the user logged in with google and it was successful
    *     tags: [Auth]
    *     parameters:
    *       - in: query
@@ -237,23 +297,6 @@ router
    *       500:
    *         description: Internal Server Error.
    */
-  .get("/google-success", successGoogleSignInController) // query parameters
-
-  // /**
-  //  * @swagger
-  //  * /auth/redirect/google:
-  //  *   get:
-  //  *     summary: Redirects users to google
-  //  *     tags: [Auth]
-  //  *     responses:
-  //  *       200:
-  //  *         description: Redirects to google.
-  //  *       400:
-  //  *         description: Bad Request.
-  //  *       500:
-  //  *         description: Internal Server Error.
-  //  */
- 
-  // .get("/redirect/google", googleCallbackController);
+  .get("/google-success", successGoogleSignInController); // query parameters
 
 module.exports = router;

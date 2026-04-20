@@ -12,6 +12,7 @@ const { PORT, APP_NAME, API_PREFIX, JWT_SECRET } = require("./config/envConfig.j
 const { connectingDb } = require("./db/conn.mjs");
 const { generateOtpCode } = require("./utils/verification.js");
 
+
 // Definitions
 const port = PORT || 3000;
 const appName = APP_NAME || "App";

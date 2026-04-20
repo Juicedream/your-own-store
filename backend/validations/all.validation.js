@@ -48,5 +48,8 @@ module.exports = {
     param("vId").isAlphanumeric().withMessage("Provide a valid verification id"),
     validate,
   ],
-
+  refreshTokenValidations : [
+    body("refreshToken").isString().withMessage("Refresh Token is required"),
+    validate,
+  ]
 };
