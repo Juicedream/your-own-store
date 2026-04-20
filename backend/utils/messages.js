@@ -19,6 +19,7 @@ const errorMessages = {
   INVALID_VERIFY_LINK: "This link is invalid or expired",
   INVALID_OTP_CODE: "This otp code is invalid or expired",
   OTP_EXIST: "Kindly use the otp previously sent to your email",
+  VERFICATION_ID_UNDEFINED: "Verification ID cannot be undefined",
 }
 
 const mailSubjects = {

@@ -14,6 +14,22 @@ class PasswordEncryption {
     );
     return isTheSamePassword;
   }
+  
+  static async hashRefreshToken(refreshToken) {
+    const hashedRefresh = await bcrypt.hash(refreshToken, SALT);
+    return hashedRefresh;
+  }
+
+  static async compareRefreshTokens(
+    refreshTokenToBeDecrypted,
+    hashedRefreshToken,
+  ) {
+    const isTheSameRefreshToken = await bcrypt.compare(
+      refreshTokenToBeDecrypted,
+      hashedRefreshToken,
+    );
+    return isTheSameRefreshToken;
+  }
 }
 
 module.exports = PasswordEncryption;
