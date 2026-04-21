@@ -1,0 +1,23 @@
+{
+  "name": "your-own-store",
+  "version": "1.0.0",
+  "description": "Your own store created by you",
+  "homepage": "https://github.com/Juicedream/your-own-store#readme",
+  "bugs": {
+    "url": "https://github.com/Juicedream/your-own-store/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Juicedream/your-own-store.git"
+  },
+  "license": "ISC",
+  "author": "Jude Nwadiogor",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend/your-own-store && npm run dev\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
